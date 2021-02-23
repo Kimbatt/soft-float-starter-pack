@@ -221,6 +221,11 @@ namespace SoftFloat
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static sfloat operator -(sfloat f) => new sfloat(f.rawValue ^ 0x80000000);
 
+        private static readonly int[] normalizeAmounts = new int[]
+        {
+            0, 0, 0, 0, 0, 0, 0, 0, 0, 8, 8, 8, 8, 8, 8, 8, 8, 16, 16, 16, 16, 16, 16, 16, 16, 24, 24, 24, 24, 24, 24, 24
+        };
+
         private static sfloat InternalAdd(sfloat f1, sfloat f2)
         {
             byte rawExp1 = f1.RawExponent;
@@ -272,16 +277,13 @@ namespace SoftFloat
                     return Zero;
                 }
 
-                uint msb = absMan >> MantissaBits;
                 int rawExp = rawExp1 - 6;
-                while (msb == 0)
-                {
-                    rawExp -= 8;
-                    absMan <<= 8;
-                    msb = absMan >> MantissaBits;
-                }
 
-                int msbIndex = BitScanReverse8(msb);
+                int amount = normalizeAmounts[clz(absMan)];
+                rawExp -= amount;
+                absMan <<= amount;
+
+                int msbIndex = BitScanReverse8(absMan >> MantissaBits);
                 rawExp += msbIndex;
                 absMan >>= msbIndex;
                 if ((uint)(rawExp - 1) < 254)
