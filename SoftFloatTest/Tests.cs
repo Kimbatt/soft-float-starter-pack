@@ -286,6 +286,13 @@ namespace SoftFloatTest
 
             PCG rand = new PCG(0, 0);
 
+            // very small values
+            for (int i = 0; i < RandomTestCount; ++i)
+            {
+                float x = rand.FloatInclusive(-1e-40f, 1e-40f);
+                TestUnaryOperationFloatApproximate(x, func(x), op, allowedErrorMultiplier);
+            }
+
             // small values
             for (int i = 0; i < RandomTestCount; ++i)
             {
@@ -406,6 +413,7 @@ namespace SoftFloatTest
             TestBinaryOperationFloatExact(-1.0f, -1.0f, 1.0f, op);
 
             TestBinaryOperationFloatApproximate(123.456f, 456.789f, 56393.34f, op);
+            TestBinaryOperationFloatApproximate(1e-40f, 1e-42f, 0.0f, op);
 
             TestBinaryOperationFloatExact(float.PositiveInfinity, float.PositiveInfinity, float.PositiveInfinity, op);
             TestBinaryOperationFloatExact(float.PositiveInfinity, float.NegativeInfinity, float.NegativeInfinity, op);
@@ -436,6 +444,7 @@ namespace SoftFloatTest
             TestBinaryOperationFloatExact(-1.0f, -1.0f, 1.0f, op);
 
             TestBinaryOperationFloatApproximate(123.456f, 456.789f, 0.2702692f, op);
+            TestBinaryOperationFloatApproximate(1e-40f, 1e-42f, 99.94678f, op);
 
             TestBinaryOperationFloatExact(float.PositiveInfinity, float.PositiveInfinity, float.NaN, op);
             TestBinaryOperationFloatExact(float.PositiveInfinity, float.NegativeInfinity, float.NaN, op);

@@ -170,52 +170,48 @@ namespace SoftFloat
             }
 
             bool negative = value < 0;
-            uint u = (uint)Math.Abs(value);
+            int u = Math.Abs(value);
 
             int shifts;
 
-            uint lzcnt = clz(u);
+            int lzcnt = clz(u);
             if (lzcnt < 8)
             {
-                int count = 8 - (int)lzcnt;
+                int count = 8 - lzcnt;
                 u >>= count;
                 shifts = -count;
             }
             else
             {
-                int count = (int)lzcnt - 8;
+                int count = lzcnt - 8;
                 u <<= count;
                 shifts = count;
             }
 
             uint exponent = (uint)(ExponentBias + MantissaBits - shifts);
-            return FromParts(negative, exponent, u);
+            return FromParts(negative, exponent, (uint)u);
         }
 
-        private static readonly uint[] debruijn32 = new uint[32]
+        private static readonly int[] debruijn32 = new int[64]
         {
-            0, 31, 9, 30, 3, 8, 13, 29, 2, 5, 7, 21, 12, 24, 28, 19,
-            1, 10, 4, 14, 6, 22, 25, 20, 11, 15, 23, 26, 16, 27, 17, 18
+            32, 8,  17, -1, -1, 14, -1, -1, -1, 20, -1, -1, -1, 28, -1, 18,
+            -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, 0,  26, 25, 24,
+            4,  11, 23, 31, 3,  7,  10, 16, 22, 30, -1, -1, 2,  6,  13, 9,
+            -1, 15, -1, 21, -1, 29, 19, -1, -1, -1, -1, -1, 1,  27, 5,  12
         };
 
         /// <summary>
-        /// Returns the leading zero count of the given 32-bit unsigned integer
+        /// Returns the leading zero count of the given 32-bit integer
         /// </summary>
-        private static uint clz(uint x)
+        private static int clz(int x)
         {
-            if (x == 0)
-            {
-                return 32;
-            }
-
             x |= x >> 1;
             x |= x >> 2;
             x |= x >> 4;
             x |= x >> 8;
             x |= x >> 16;
-            x++;
 
-            return debruijn32[x * 0x076be629 >> 27];
+            return debruijn32[(uint)x * 0x8c0b2891u >> 26];
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -271,7 +267,7 @@ namespace SoftFloat
                 }
 
                 int man = (man1 << 6) + ((man2 << 6) >> deltaExp);
-                uint absMan = (uint)Math.Abs(man);
+                int absMan = Math.Abs(man);
                 if (absMan == 0)
                 {
                     return Zero;
@@ -288,7 +284,7 @@ namespace SoftFloat
                 absMan >>= msbIndex;
                 if ((uint)(rawExp - 1) < 254)
                 {
-                    uint raw = (uint)man & 0x80000000 | (uint)rawExp << MantissaBits | (absMan & 0x7FFFFF);
+                    uint raw = (uint)man & 0x80000000 | (uint)rawExp << MantissaBits | ((uint)absMan & 0x7FFFFF);
                     return new sfloat(raw);
                 }
                 else
@@ -301,7 +297,7 @@ namespace SoftFloat
 
                     if (rawExp >= -24)
                     {
-                        uint raw = (uint)man & 0x80000000 | absMan >> (-rawExp + 1);
+                        uint raw = (uint)man & 0x80000000 | (uint)(absMan >> (-rawExp + 1));
                         return new sfloat(raw);
                     }
 
@@ -341,7 +337,7 @@ namespace SoftFloat
             {
                 // SubNorm
                 sign1 = (uint)((int)f1.rawValue >> 31);
-                uint rawMan1 = f1.RawMantissa;
+                int rawMan1 = (int)f1.RawMantissa;
                 if (rawMan1 == 0)
                 {
                     if (f2.IsFinite())
@@ -357,12 +353,9 @@ namespace SoftFloat
                     }
                 }
 
-                rawExp1 = 1;
-                while ((rawMan1 & 0x800000) == 0)
-                {
-                    rawMan1 <<= 1;
-                    rawExp1--;
-                }
+                int shift = clz(rawMan1 & 0x00ffffff) - 8;
+                rawMan1 <<= shift;
+                rawExp1 = 1 - shift;
 
                 //Debug.Assert(rawMan1 >> MantissaBits == 1);
                 man1 = (int)((rawMan1 ^ sign1) - sign1);
@@ -433,7 +426,7 @@ namespace SoftFloat
             {
                 // SubNorm
                 sign2 = (uint)((int)f2.rawValue >> 31);
-                uint rawMan2 = f2.RawMantissa;
+                int rawMan2 = (int)f2.RawMantissa;
                 if (rawMan2 == 0)
                 {
                     if (f1.IsFinite())
@@ -449,12 +442,10 @@ namespace SoftFloat
                     }
                 }
 
-                rawExp2 = 1;
-                while ((rawMan2 & 0x800000) == 0)
-                {
-                    rawMan2 <<= 1;
-                    rawExp2--;
-                }
+                int shift = clz(rawMan2 & 0x00ffffff) - 8;
+                rawMan2 <<= shift;
+                rawExp2 = 1 - shift;
+
                 //Debug.Assert(rawMan2 >> MantissaBits == 1);
                 man2 = (int)((rawMan2 ^ sign2) - sign2);
             }
@@ -561,7 +552,7 @@ namespace SoftFloat
             {
                 // SubNorm
                 sign1 = (uint)((int)f1.rawValue >> 31);
-                uint rawMan1 = f1.RawMantissa;
+                int rawMan1 = (int)f1.RawMantissa;
                 if (rawMan1 == 0)
                 {
                     if (f2.IsZero())
@@ -576,12 +567,9 @@ namespace SoftFloat
                     }
                 }
 
-                rawExp1 = 1;
-                while ((rawMan1 & 0x800000) == 0)
-                {
-                    rawMan1 <<= 1;
-                    rawExp1--;
-                }
+                int shift = clz(rawMan1 & 0x00ffffff) - 8;
+                rawMan1 <<= shift;
+                rawExp1 = 1 - shift;
 
                 //Debug.Assert(rawMan1 >> MantissaBits == 1);
                 man1 = (int)((rawMan1 ^ sign1) - sign1);
@@ -630,19 +618,16 @@ namespace SoftFloat
             {
                 // SubNorm
                 sign2 = (uint)((int)f2.rawValue >> 31);
-                uint rawMan2 = f2.RawMantissa;
+                int rawMan2 = (int)f2.RawMantissa;
                 if (rawMan2 == 0)
                 {
                     // f / 0
                     return new sfloat(((f1.rawValue ^ f2.rawValue) & SignMask) | RawPositiveInfinity);
                 }
 
-                rawExp2 = 1;
-                while ((rawMan2 & 0x800000) == 0)
-                {
-                    rawMan2 <<= 1;
-                    rawExp2--;
-                }
+                int shift = clz(rawMan2 & 0x00ffffff) - 8;
+                rawMan2 <<= shift;
+                rawExp2 = 1 - shift;
 
                 //Debug.Assert(rawMan2 >> MantissaBits == 1);
                 man2 = (int)((rawMan2 ^ sign2) - sign2);
@@ -753,7 +738,7 @@ namespace SoftFloat
         };
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        private static int BitScanReverse8(uint b) => msb[b];
+        private static int BitScanReverse8(int b) => msb[b];
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         private static unsafe uint ReinterpretFloatToInt32(float f) => *(uint*)&f;
