@@ -1,0 +1,9 @@
+{
+    "name": "com.kimbatt.soft_floats",
+    "displayName": "SoftFloats",
+    "version": "1.0.0",
+    "documentationUrl": "https://github.com/Kimbatt/soft-float-starter-pack",
+    "changelogUrl": "https://github.com/Kimbatt/soft-float-starter-pack",
+    "licensesUrl": "https://github.com/Kimbatt/soft-float-starter-pack/blob/master/LICENSE",
+    "description": " A software implementation of floating point numbers and operations."
+}
